@@ -148,6 +148,88 @@ export type Database = {
         }
         Relationships: []
       }
+      case_documents: {
+        Row: {
+          case_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          case_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          case_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      followup_documents: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          followup_id: string
+          id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          followup_id: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          followup_id?: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followup_documents_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "social_followups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       police_referrals: {
         Row: {
           case_id: string

@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 // Interface para os dados estatísticos
 interface DashboardStats {
@@ -25,18 +26,22 @@ interface DashboardStats {
   totalCases: number;
   alertsGenerated: number;
   followUpsScheduled: number;
+  casesByCategory: { name: string; value: number }[];
+  casesByStatus: { name: string; value: number }[];
+  alertsByType: { name: string; value: number }[];
 }
 
 const Dashboard = () => {
   const { user, profile, role, loading } = useAuth();
   const navigate = useNavigate();
+  const [realtimeSubscribed, setRealtimeSubscribed] = useState(false);
   
-  // Função para buscar estatísticas reais do Supabase
+  // Função para buscar estatísticas do Supabase
   const fetchStatistics = async (): Promise<DashboardStats> => {
     try {
       // Contagem de usuários
       const { count: usersCount, error: usersError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*', { count: 'exact', head: true });
       
       if (usersError) throw usersError;
@@ -62,32 +67,167 @@ const Dashboard = () => {
       
       if (followupsError) throw followupsError;
       
+      // Casos por categoria (tipo de suspeita)
+      const { data: casesByCategory, error: categoriesError } = await supabase
+        .from('assistance_cases')
+        .select('suspicion_type, count')
+        .not('suspicion_type', 'is', null)
+        .group('suspicion_type');
+        
+      if (categoriesError) throw categoriesError;
+      
+      // Casos por status
+      const { data: casesByStatus, error: statusError } = await supabase
+        .from('assistance_cases')
+        .select('case_status, count')
+        .group('case_status');
+        
+      if (statusError) throw statusError;
+      
+      // Alertas por tipo
+      const { data: alertsByType, error: alertTypesError } = await supabase
+        .from('alerts')
+        .select('alert_type, count')
+        .group('alert_type');
+        
+      if (alertTypesError) throw alertTypesError;
+      
+      // Formatar dados para gráficos
+      const formattedCasesByCategory = casesByCategory?.map(item => ({
+        name: translateSuspicionType(item.suspicion_type),
+        value: parseInt(item.count)
+      })) || [];
+      
+      const formattedCasesByStatus = casesByStatus?.map(item => ({
+        name: translateCaseStatus(item.case_status),
+        value: parseInt(item.count)
+      })) || [];
+      
+      const formattedAlertsByType = alertsByType?.map(item => ({
+        name: translateAlertType(item.alert_type),
+        value: parseInt(item.count)
+      })) || [];
+      
       return {
         totalUsers: usersCount || 0,
         totalCases: casesCount || 0,
         alertsGenerated: alertsCount || 0,
         followUpsScheduled: followupsCount || 0,
+        casesByCategory: formattedCasesByCategory,
+        casesByStatus: formattedCasesByStatus,
+        alertsByType: formattedAlertsByType
       };
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
-      // Fallback para alguns dados simulados em caso de erro
+      // Fallback para dados simulados em caso de erro
       return {
         totalUsers: 0,
         totalCases: 0,
         alertsGenerated: 0,
         followUpsScheduled: 0,
+        casesByCategory: [],
+        casesByStatus: [],
+        alertsByType: []
       };
     }
   };
 
+  // Traduzir tipos de suspeita para exibição
+  const translateSuspicionType = (type: string | null) => {
+    switch(type) {
+      case 'physical_abuse': return 'Abuso Físico';
+      case 'psychological_abuse': return 'Abuso Psicológico';
+      case 'sexual_abuse': return 'Abuso Sexual';
+      case 'negligence': return 'Negligência';
+      case 'other': return 'Outros';
+      default: return 'Não especificado';
+    }
+  };
+
+  // Traduzir status de caso para exibição
+  const translateCaseStatus = (status: string) => {
+    switch(status) {
+      case 'open': return 'Aberto';
+      case 'in_progress': return 'Em Andamento';
+      case 'referred': return 'Encaminhado';
+      case 'closed': return 'Encerrado';
+      default: return status;
+    }
+  };
+
+  // Traduzir tipos de alerta para exibição
+  const translateAlertType = (type: string) => {
+    switch(type) {
+      case 'recurrence': return 'Reincidência';
+      case 'high_risk': return 'Alto Risco';
+      case 'suspicious': return 'Caso Suspeito';
+      default: return type || 'Não especificado';
+    }
+  };
+
   // Usar React Query para gerenciar o estado e cache dos dados
-  const { data: statistics = { totalUsers: 0, totalCases: 0, alertsGenerated: 0, followUpsScheduled: 0 }, 
-          isLoading: statsLoading } = useQuery({
+  const { data: statistics = { 
+    totalUsers: 0, 
+    totalCases: 0, 
+    alertsGenerated: 0, 
+    followUpsScheduled: 0,
+    casesByCategory: [],
+    casesByStatus: [],
+    alertsByType: []
+  }, isLoading: statsLoading, refetch } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: fetchStatistics,
     enabled: !!user, // Só busca dados quando o usuário estiver autenticado
     staleTime: 5 * 60 * 1000, // 5 minutos de cache
   });
+
+  // Cores para os gráficos
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  // Configurar escuta em tempo real para atualizações
+  useEffect(() => {
+    if (!user || realtimeSubscribed) return;
+
+    // Assinar para mudanças em várias tabelas
+    const channel = supabase
+      .channel('dashboard-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'users'
+      }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'assistance_cases'
+      }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'alerts'
+      }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'social_followups'
+      }, () => {
+        refetch();
+      })
+      .subscribe();
+
+    setRealtimeSubscribed(true);
+
+    // Limpar inscrição ao desmontar
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, realtimeSubscribed, refetch]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -231,34 +371,78 @@ const Dashboard = () => {
           <Card className="overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg">Casos por Categoria</CardTitle>
-              <CardDescription>Distribuição de casos por categoria</CardDescription>
+              <CardDescription>Distribuição de casos por tipo de suspeita</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex h-64 w-full items-center justify-center rounded-md border border-dashed p-4">
-                <div className="flex h-full w-full flex-col items-center justify-center rounded-md">
+              {statistics.casesByCategory.length > 0 ? (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statistics.casesByCategory}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {statistics.casesByCategory.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} casos`, '']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex h-64 w-full flex-col items-center justify-center rounded-md border border-dashed p-4">
                   <PieChartIcon className="h-16 w-16 text-muted-foreground/60" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Dados em breve disponíveis
+                    Não há dados suficientes para exibir
                   </p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
           <Card className="overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-lg">Usuários Ativos ao Longo do Tempo</CardTitle>
-              <CardDescription>Número de usuários ativos por mês</CardDescription>
+              <CardTitle className="text-lg">Casos por Status</CardTitle>
+              <CardDescription>Distribuição de casos por situação atual</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex h-64 w-full items-center justify-center rounded-md border border-dashed p-4">
-                <div className="flex h-full w-full flex-col items-center justify-center rounded-md">
-                  <LineChartIcon className="h-16 w-16 text-muted-foreground/60" />
+              {statistics.casesByStatus.length > 0 ? (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statistics.casesByStatus}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {statistics.casesByStatus.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value} casos`, '']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex h-64 w-full flex-col items-center justify-center rounded-md border border-dashed p-4">
+                  <PieChartIcon className="h-16 w-16 text-muted-foreground/60" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Dados em breve disponíveis
+                    Não há dados suficientes para exibir
                   </p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -268,14 +452,39 @@ const Dashboard = () => {
               <CardDescription>Distribuição de alertas por tipo</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex h-64 w-full items-center justify-center rounded-md border border-dashed p-4">
-                <div className="flex h-full w-full flex-col items-center justify-center rounded-md">
+              {statistics.alertsByType.length > 0 ? (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={statistics.alertsByType}
+                      margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" name="Quantidade" fill="#8884d8">
+                        {statistics.alertsByType.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex h-64 w-full flex-col items-center justify-center rounded-md border border-dashed p-4">
                   <BarChartIcon className="h-16 w-16 text-muted-foreground/60" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Dados em breve disponíveis
+                    Não há dados suficientes para exibir
                   </p>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

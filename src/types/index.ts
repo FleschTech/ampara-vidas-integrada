@@ -97,3 +97,51 @@ export interface SocialFollowupInput {
   report: string;
   action_taken?: string | null;
 }
+
+// Tipos para documentos de casos
+export interface CaseDocument {
+  id: string;
+  case_id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  description?: string | null;
+}
+
+export interface CaseDocumentInput {
+  case_id: string;
+  file: File;
+  uploaded_by: string;
+  description?: string | null;
+}
+
+// Tipos para documentos de acompanhamento
+export interface FollowupDocument {
+  id: string;
+  followup_id: string;
+  file_path: string;
+  file_name: string;
+  file_type: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  description?: string | null;
+}
+
+export interface FollowupDocumentInput {
+  followup_id: string;
+  file: File;
+  uploaded_by: string;
+  description?: string | null;
+}
+
+// Tipos para criação de usuário pelo admin
+export interface UserCreateInput {
+  email: string;
+  name: string;
+  role: UserRole;
+  organization?: string | null;
+  phone?: string | null;
+  password: string;
+}

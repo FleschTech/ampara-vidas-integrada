@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -14,8 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Search, UserCheck, AlertTriangle, FileText, Check, X } from 'lucide-react';
+import { Calendar, Search, UserCheck, AlertTriangle, FileText, Check, X, FileUp } from 'lucide-react';
 import { SocialFollowup, SocialFollowupInput } from '@/types';
+import { DocumentUploader } from '@/components/documents/DocumentUploader';
+import { DocumentsList } from '@/components/documents/DocumentsList';
 
 // Esquema de validação
 const followupSchema = z.object({
@@ -38,6 +39,9 @@ const SocialFollowups = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('new');
+  const [selectedFollowupId, setSelectedFollowupId] = useState<string | null>(null);
+  const [documentRefreshTrigger, setDocumentRefreshTrigger] = useState(0);
   
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm<FormValues>({
     resolver: zodResolver(followupSchema),
@@ -203,9 +207,11 @@ const SocialFollowups = () => {
         action_taken: data.action_taken || null
       };
       
-      const { error } = await supabase
+      const { data: newFollowup, error } = await supabase
         .from('social_followups')
-        .insert([followupData]);
+        .insert([followupData])
+        .select()
+        .single();
         
       if (error) throw error;
       
@@ -225,9 +231,15 @@ const SocialFollowups = () => {
         description: "Acompanhamento registrado com sucesso.",
       });
       
-      // Limpar formulário
-      reset();
-      setSearchTerm('');
+      // Definir o ID do acompanhamento criado para possibilitar upload de documentos
+      if (newFollowup) {
+        setSelectedFollowupId(newFollowup.id);
+        setActiveTab('docs');
+      } else {
+        // Limpar formulário se não vamos para documentos
+        reset();
+        setSearchTerm('');
+      }
       
       // Recarregar acompanhamentos recentes
       const { data: updatedFollowups } = await supabase
@@ -432,12 +444,22 @@ const SocialFollowups = () => {
             </Card>
           </div>
           
-          {/* Coluna da Direita - Formulário e Ações */}
+          {/* Coluna da Direita - Formulário e A��ões */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="new">
+            <Tabs 
+              defaultValue="new" 
+              value={activeTab}
+              onValueChange={setActiveTab}
+            >
               <TabsList className="mb-4">
                 <TabsTrigger value="new">Novo Acompanhamento</TabsTrigger>
                 <TabsTrigger value="search">Buscar Casos</TabsTrigger>
+                {selectedFollowupId && (
+                  <TabsTrigger value="docs">
+                    <FileUp className="h-4 w-4 mr-2" />
+                    Documentos
+                  </TabsTrigger>
+                )}
               </TabsList>
               
               <TabsContent value="new">
@@ -644,6 +666,59 @@ const SocialFollowups = () => {
                         </div>
                       ) : null}
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              {/* Nova tab para documentos */}
+              <TabsContent value="docs">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Documentos do Acompanhamento</CardTitle>
+                    <CardDescription>
+                      Adicione documentos relacionados ao acompanhamento social.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {selectedFollowupId ? (
+                      <>
+                        <DocumentUploader 
+                          followupId={selectedFollowupId} 
+                          onUploadComplete={() => setDocumentRefreshTrigger(prev => prev + 1)}
+                        />
+                        
+                        <DocumentsList 
+                          followupId={selectedFollowupId}
+                          refreshTrigger={documentRefreshTrigger}
+                        />
+                        
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={() => {
+                              setSelectedFollowupId(null);
+                              setActiveTab('new');
+                              reset();
+                              setSearchTerm('');
+                              setSearchResults([]);
+                            }}
+                          >
+                            Finalizar e Iniciar Novo Acompanhamento
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">
+                          Primeiro registre um acompanhamento para adicionar documentos.
+                        </p>
+                        <Button
+                          className="mt-4"
+                          onClick={() => setActiveTab('new')}
+                        >
+                          Voltar ao Formulário
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
