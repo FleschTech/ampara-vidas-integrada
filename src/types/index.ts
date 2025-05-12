@@ -1,19 +1,17 @@
 
-import { Database } from "@/integrations/supabase/types";
-
-// User role types
+// Tipos de usuário
 export type UserRole = 'hospital' | 'social_assistance' | 'police' | 'admin';
 
-// Case status types
+// Tipos de status de caso
 export type CaseStatus = 'open' | 'in_progress' | 'referred' | 'closed';
 
-// Urgency level types
+// Tipos de urgência
 export type UrgencyLevel = 'low' | 'medium' | 'high' | 'critical';
 
-// Suspicion types
+// Tipos de suspeita
 export type SuspicionType = 'physical_abuse' | 'psychological_abuse' | 'sexual_abuse' | 'negligence' | 'other';
 
-// Profile types
+// Tipos de perfil
 export interface Profile {
   id: string;
   name: string;
@@ -24,7 +22,7 @@ export interface Profile {
   updated_at: string;
 }
 
-// Define a basic structure for assisted persons
+// Tipos de pessoas assistidas
 export interface AssistedPerson {
   id: string;
   full_name: string;
@@ -54,7 +52,7 @@ export interface AssistedPersonInput {
   phone?: string;
 }
 
-// Define a structure for assistance cases
+// Tipos de atendimentos
 export interface AssistanceCase {
   id: string;
   assisted_person_id: string;
@@ -80,7 +78,7 @@ export interface AssistanceCaseInput {
   is_suspicious: boolean;
 }
 
-// Define a structure for social followups
+// Tipos de acompanhamentos sociais
 export interface SocialFollowup {
   id: string;
   case_id: string;

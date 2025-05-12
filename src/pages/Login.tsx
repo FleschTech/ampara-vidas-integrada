@@ -37,22 +37,22 @@ const Login = () => {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Nidus Sentinela</CardTitle>
           <CardDescription>
-            System for Protection of Vulnerable Women and Children
+            Sistema de Proteção para Mulheres e Crianças Vulneráveis
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="your.email@example.com" 
+                placeholder="seu.email@exemplo.com" 
                 {...register("email", { 
-                  required: "Email is required",
+                  required: "Email é obrigatório",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address"
+                    message: "Email inválido"
                   }
                 })}
               />
@@ -61,17 +61,17 @@ const Login = () => {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <div className="relative">
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
                   placeholder="********" 
                   {...register("password", { 
-                    required: "Password is required",
+                    required: "Senha é obrigatória",
                     minLength: {
                       value: 6,
-                      message: "Password must be at least 6 characters long"
+                      message: "A senha deve ter pelo menos 6 caracteres"
                     }
                   })}
                 />
@@ -95,7 +95,7 @@ const Login = () => {
             </div>
             <div className="text-right">
               <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot your password?
+                Esqueceu sua senha?
               </Link>
             </div>
           </CardContent>
@@ -104,21 +104,18 @@ const Login = () => {
               {loading ? (
                 <span className="flex items-center">
                   <span className="w-4 h-4 mr-2 border-t-2 border-r-2 border-white rounded-full animate-spin" />
-                  Signing in...
+                  Entrando...
                 </span>
               ) : (
                 <span className="flex items-center">
                   <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
+                  Entrar
                 </span>
               )}
             </Button>
-            <p className="mt-4 text-sm text-center text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-primary hover:underline">
-                Register
-              </Link>
-            </p>
+            <div className="mt-4 text-sm text-center text-muted-foreground">
+              {/* Note: Só administradores podem registrar usuários */}
+            </div>
           </CardFooter>
         </form>
       </Card>

@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-
-type UserRole = 'hospital' | 'social_assistance' | 'police' | 'admin';
+import { UserRole } from '@/types';
 
 type Profile = {
   id: string;
@@ -24,7 +23,7 @@ type AuthContextType = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
 };
@@ -80,14 +79,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Erro ao buscar perfil:', error);
         return;
       }
 
       setProfile(data);
       setRole(data.role);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Erro ao carregar perfil:', error);
     }
   };
 
@@ -101,21 +100,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
 
       toast({
-        title: 'Login successful',
-        description: `Welcome back!`,
+        title: 'Login realizado com sucesso',
+        description: `Bem-vindo de volta!`,
       });
 
-      navigate('/dashboard');
+      navigate('/');
     } catch (error: any) {
       toast({
-        title: 'Login error',
+        title: 'Erro ao fazer login',
         description: error.message,
         variant: 'destructive',
       });
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, role: UserRole = 'hospital') => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -123,6 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           data: {
             name,
+            role,
           },
         },
       });
@@ -130,14 +130,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
 
       toast({
-        title: 'Account created',
-        description: 'Please check your email to confirm your registration.',
+        title: 'Conta criada com sucesso',
+        description: 'Verifique seu email para confirmar o cadastro.',
       });
 
       navigate('/login');
     } catch (error: any) {
       toast({
-        title: 'Registration error',
+        title: 'Erro ao criar conta',
         description: error.message,
         variant: 'destructive',
       });
@@ -148,14 +148,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     navigate('/login');
     toast({
-      title: 'Logged out',
-      description: 'You have been logged out successfully.',
+      title: 'Logout realizado',
+      description: 'Você foi desconectado com sucesso.',
     });
   };
 
   const updateProfile = async (profileData: Partial<Profile>) => {
     try {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
         .from('profiles')
@@ -164,18 +164,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // Update locally
+      // Atualiza localmente
       if (profile) {
         setProfile({ ...profile, ...profileData });
       }
 
       toast({
-        title: 'Profile updated',
-        description: 'Your profile information has been updated successfully.',
+        title: 'Perfil atualizado',
+        description: 'Suas informações foram atualizadas com sucesso.',
       });
     } catch (error: any) {
       toast({
-        title: 'Error updating profile',
+        title: 'Erro ao atualizar perfil',
         description: error.message,
         variant: 'destructive',
       });
