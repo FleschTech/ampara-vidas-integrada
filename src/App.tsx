@@ -12,6 +12,14 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
+import RegisterPerson from "@/pages/RegisterPerson";
+import RegisterCase from "@/pages/RegisterCase";
+import CaseDetails from "@/pages/CaseDetails";
+import Alerts from "@/pages/Alerts";
+import Search from "@/pages/Search";
+import SocialFollowups from "@/pages/SocialFollowups";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +35,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/register-person" element={<RegisterPerson />} />
+            <Route path="/register-case" element={<RegisterCase />} />
+            <Route path="/case/:caseId" element={<CaseDetails />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/followups" element={<SocialFollowups />} />
+            <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
