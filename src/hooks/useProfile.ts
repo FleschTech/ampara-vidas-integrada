@@ -59,19 +59,22 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 export const useProfileManagement = () => {
+  // Alternative approach if you can't create RPC functions
   const updateProfile = async (profileData: Partial<Profile>, userId: string) => {
     try {
       console.log("Updating profile for user:", userId, "with data:", profileData);
       if (!userId) throw new Error('Usuário não autenticado');
 
-      // Use the RPC function instead of direct update
-      const { data, error } = await supabase
-        .rpc('update_user_profile', { 
-          user_id: userId,
-          profile_data: profileData
-        });
+      // Use service role client to bypass RLS
+      // Note: You'd need to implement this through a backend API endpoint
+      // as you shouldn't expose service role keys in frontend code
+      const { error } = await fetch('/api/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, profileData })
+      }).then(res => res.json());
 
-      if (error) throw error;
+      if (error) throw new Error(error);
 
       toast({
         title: 'Perfil atualizado',
@@ -83,7 +86,7 @@ export const useProfileManagement = () => {
       console.error("Error updating profile:", error);
       
       toast({
-        title: 'Erro ao atualizar perfil',
+        title: 'Erro ao atualizar perfil', 
         description: error.message,
         variant: 'destructive',
       });
