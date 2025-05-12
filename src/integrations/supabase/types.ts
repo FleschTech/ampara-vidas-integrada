@@ -9,7 +9,251 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          alert_type: string
+          case_id: string
+          created_at: string | null
+          description: string
+          id: string
+          is_resolved: boolean
+          resolved_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          case_id: string
+          created_at?: string | null
+          description: string
+          id?: string
+          is_resolved?: boolean
+          resolved_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          case_id?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_resolved?: boolean
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistance_cases: {
+        Row: {
+          alert_generated: boolean
+          assisted_person_id: string
+          case_status: string
+          created_at: string | null
+          description: string
+          id: string
+          is_recurrent: boolean
+          is_suspicious: boolean
+          registered_by: string
+          suspicion_type: string | null
+          updated_at: string | null
+          urgency: string
+        }
+        Insert: {
+          alert_generated?: boolean
+          assisted_person_id: string
+          case_status?: string
+          created_at?: string | null
+          description: string
+          id?: string
+          is_recurrent?: boolean
+          is_suspicious?: boolean
+          registered_by: string
+          suspicion_type?: string | null
+          updated_at?: string | null
+          urgency: string
+        }
+        Update: {
+          alert_generated?: boolean
+          assisted_person_id?: string
+          case_status?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_recurrent?: boolean
+          is_suspicious?: boolean
+          registered_by?: string
+          suspicion_type?: string | null
+          updated_at?: string | null
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistance_cases_assisted_person_id_fkey"
+            columns: ["assisted_person_id"]
+            isOneToOne: false
+            referencedRelation: "assisted_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assisted_persons: {
+        Row: {
+          address: string
+          birth_date: string
+          city: string
+          cpf: string | null
+          created_at: string | null
+          full_name: string
+          gender: string
+          id: string
+          neighborhood: string
+          phone: string | null
+          state: string
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          birth_date: string
+          city: string
+          cpf?: string | null
+          created_at?: string | null
+          full_name: string
+          gender: string
+          id?: string
+          neighborhood: string
+          phone?: string | null
+          state: string
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          birth_date?: string
+          city?: string
+          cpf?: string | null
+          created_at?: string | null
+          full_name?: string
+          gender?: string
+          id?: string
+          neighborhood?: string
+          phone?: string | null
+          state?: string
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      police_referrals: {
+        Row: {
+          case_id: string
+          id: string
+          referral_date: string | null
+          referred_by: string
+          report_details: string
+          status: string
+        }
+        Insert: {
+          case_id: string
+          id?: string
+          referral_date?: string | null
+          referred_by: string
+          report_details: string
+          status?: string
+        }
+        Update: {
+          case_id?: string
+          id?: string
+          referral_date?: string | null
+          referred_by?: string
+          report_details?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "police_referrals_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          organization: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name?: string | null
+          organization?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          organization?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      social_followups: {
+        Row: {
+          action_taken: string | null
+          case_id: string
+          created_at: string | null
+          id: string
+          performed_by: string
+          report: string
+          updated_at: string | null
+          visit_date: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          case_id: string
+          created_at?: string | null
+          id?: string
+          performed_by: string
+          report: string
+          updated_at?: string | null
+          visit_date?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          case_id?: string
+          created_at?: string | null
+          id?: string
+          performed_by?: string
+          report?: string
+          updated_at?: string | null
+          visit_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_followups_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
