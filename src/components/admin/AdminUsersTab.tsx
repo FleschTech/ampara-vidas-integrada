@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { User, UserRole } from '@/types';
+import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
