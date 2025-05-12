@@ -64,11 +64,12 @@ export const useProfileManagement = () => {
       console.log("Updating profile for user:", userId, "with data:", profileData);
       if (!userId) throw new Error('Usuário não autenticado');
 
-      // Use a transaction to update all fields at once
-      const { error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', userId);
+      // Use the RPC function instead of direct update
+      const { data, error } = await supabase
+        .rpc('update_user_profile', { 
+          user_id: userId,
+          profile_data: profileData
+        });
 
       if (error) throw error;
 
