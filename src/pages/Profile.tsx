@@ -34,16 +34,17 @@ const Profile = () => {
     }
   });
   
-  // Redirecionar se não estiver autenticado
+  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       navigate('/login');
     }
   }, [user, loading, navigate]);
   
-  // Preencher o formulário com os dados do perfil
+  // Fill the form with profile data
   useEffect(() => {
     if (profile) {
+      console.log("Profile loaded:", profile);
       reset({
         name: profile.name || '',
         organization: profile.organization || '',
@@ -55,6 +56,7 @@ const Profile = () => {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
+      console.log("Updating profile with data:", data);
       await updateProfile(data);
     } catch (error: any) {
       toast({

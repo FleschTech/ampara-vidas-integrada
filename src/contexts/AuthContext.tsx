@@ -38,10 +38,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Direct database query for profile
+  // Fetch profile separately to avoid recursion
   const fetchProfile = async (userId: string) => {
     try {
-      // Using RPC call to get_user_role function to avoid recursion
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -63,40 +62,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const setupAuth = async () => {
       try {
-        // Get initial session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (currentSession?.user) {
-          setUser(currentSession.user);
-          setSession(currentSession);
-          
-          // Fetch profile outside of auth state change
-          const userProfile = await fetchProfile(currentSession.user.id);
-          if (userProfile) {
-            setProfile(userProfile);
-            setRole(userProfile.role);
-          }
-        }
-        
-        // Set up auth state listener
+        // First set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
+          (event, newSession) => {
+            // Set session and user synchronously
             setSession(newSession);
             setUser(newSession?.user ?? null);
             
+            // If there's a user, fetch profile in a separate cycle
             if (newSession?.user) {
-              // Fetch profile when auth state changes
-              const userProfile = await fetchProfile(newSession.user.id);
-              if (userProfile) {
-                setProfile(userProfile);
-                setRole(userProfile.role);
-              }
+              setTimeout(async () => {
+                const userProfile = await fetchProfile(newSession.user.id);
+                if (userProfile) {
+                  setProfile(userProfile);
+                  setRole(userProfile.role);
+                }
+              }, 0);
             } else {
               setProfile(null);
               setRole(null);
             }
           }
         );
+        
+        // Then check current session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        // Set session and user synchronously
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        // If there's a user, fetch profile
+        if (currentSession?.user) {
+          const userProfile = await fetchProfile(currentSession.user.id);
+          if (userProfile) {
+            setProfile(userProfile);
+            setRole(userProfile.role);
+          }
+        }
         
         setLoading(false);
         
