@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -54,10 +53,11 @@ const Profile = () => {
   
   // Refresh profile data when component mounts
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && !profile) {
+      // Only refresh if we don't already have a profile
       refreshProfile();
     }
-  }, [refreshProfile, user, loading]);
+  }, [user, loading, profile, refreshProfile]);
   
   const onSubmit = async (data: FormValues) => {
     try {
