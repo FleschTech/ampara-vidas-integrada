@@ -14,33 +14,32 @@ export type Profile = {
   updated_at: string;
 };
 
-// Function to fetch staff profile
+// Função para buscar perfil do usuário
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
-    console.log("Fetching staff profile for user:", userId);
+    console.log("Buscando perfil do usuário:", userId);
     
-    // Get the profile data
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
+    // Buscar dados do usuário na tabela users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
       
-    if (profileError) {
-      console.error('Error fetching staff profile:', profileError);
+    if (userError) {
+      console.error('Erro ao buscar perfil do usuário:', userError);
       return null;
     }
     
-    console.log("Profile data from DB:", profileData);
+    console.log("Dados do usuário:", userData);
 
-    if (profileData) {
-      // The role is now directly in the profiles table
-      return profileData as Profile;
+    if (userData) {
+      return userData as Profile;
     }
     
     return null;
   } catch (error) {
-    console.error('Error in fetchProfile:', error);
+    console.error('Erro em fetchProfile:', error);
     return null;
   }
 };
@@ -48,19 +47,16 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 export const useProfileManagement = () => {
   const updateProfile = async (profileData: Partial<Profile>, userId: string) => {
     try {
-      console.log("Updating staff profile for user:", userId, "with data:", profileData);
+      console.log("Atualizando perfil do usuário:", userId, "com dados:", profileData);
       if (!userId) throw new Error('Usuário não autenticado');
 
-      // Use service role client to bypass RLS
-      // Note: You'd need to implement this through a backend API endpoint
-      // as you shouldn't expose service role keys in frontend code
-      const { error } = await fetch('/api/update-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, profileData })
-      }).then(res => res.json());
+      // Atualizar o perfil na tabela users
+      const { error } = await supabase
+        .from('users')
+        .update(profileData)
+        .eq('id', userId);
 
-      if (error) throw new Error(error);
+      if (error) throw error;
 
       toast({
         title: 'Perfil atualizado',
@@ -69,7 +65,7 @@ export const useProfileManagement = () => {
       
       return true;
     } catch (error: any) {
-      console.error("Error updating staff profile:", error);
+      console.error("Erro ao atualizar perfil:", error);
       
       toast({
         title: 'Erro ao atualizar perfil', 

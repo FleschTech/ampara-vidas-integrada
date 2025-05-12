@@ -18,37 +18,37 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        // If still loading auth state, wait
+        // Se ainda estiver carregando o estado de autenticação, aguardar
         if (loading) {
-          console.log("Auth still loading, waiting...");
+          console.log("Autenticação ainda carregando, aguardando...");
           return;
         }
         
-        // If no user, no access
+        // Se não houver usuário, sem acesso
         if (!user) {
-          console.log("No system user, denying access");
+          console.log("Sem usuário, negando acesso");
           setHasAccess(false);
           setIsCheckingRole(false);
           return;
         }
         
-        // Double-check that we have the role, if not try to refresh the profile
+        // Verificar se o usuário tem uma função definida, caso contrário tentar atualizar o perfil
         if (!role) {
-          console.log("No system user role found, attempting to refresh profile");
+          console.log("Função de usuário não encontrada, tentando atualizar perfil");
           await refreshProfile();
         }
         
-        console.log("System user role:", role, "Allowed roles:", allowedRoles);
+        console.log("Função do usuário:", role, "Funções permitidas:", allowedRoles);
         
-        // If we have a role and it's in allowed roles, grant access
+        // Se há uma função e ela está nas funções permitidas, conceder acesso
         if (role && allowedRoles.includes(role)) {
-          console.log("Access granted for system user with role:", role);
+          console.log("Acesso concedido para usuário com função:", role);
           setHasAccess(true);
         } else {
-          console.log("Access denied for system user with role:", role);
+          console.log("Acesso negado para usuário com função:", role);
           setHasAccess(false);
           
-          // Show toast only if there's a user but role isn't allowed
+          // Mostrar toast apenas se houver um usuário mas a função não for permitida
           if (role) {
             toast({
               title: "Acesso negado",
@@ -60,7 +60,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
         
         setIsCheckingRole(false);
       } catch (error) {
-        console.error("Erro ao verificar permissões do usuário do sistema:", error);
+        console.error("Erro ao verificar permissões do usuário:", error);
         setHasAccess(false);
         setIsCheckingRole(false);
       }
@@ -78,16 +78,16 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
   }
   
   if (!user) {
-    console.log("Redirecting to login, no system user");
+    console.log("Redirecionando para login, sem usuário");
     return <Navigate to="/login" replace />;
   }
   
   if (!hasAccess) {
-    console.log("Redirecting to dashboard, no access for this system user role");
+    console.log("Redirecionando para dashboard, sem acesso para esta função de usuário");
     return <Navigate to="/dashboard" replace />;
   }
   
-  console.log("Rendering protected content for system user with appropriate role");
+  console.log("Renderizando conteúdo protegido para usuário com função apropriada");
   return <>{children}</>;
 };
 

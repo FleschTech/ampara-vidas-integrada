@@ -32,23 +32,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshingProfile = useRef(false);
   const navigate = useNavigate();
   
-  // Import auth and profile management methods
+  // Importar métodos de autenticação e gerenciamento de perfil
   const { updateProfile: updateUserProfile } = useProfileManagement();
   const { signIn, signUp, signOut } = useAuthMethods();
   
-  // Function to refresh profile data
+  // Função para atualizar o perfil
   const refreshProfile = async (): Promise<void> => {
     if (!user) {
-      console.log("Cannot refresh profile: No system user logged in");
+      console.log("Não é possível atualizar o perfil: Nenhum usuário logado");
       return;
     }
     
     try {
-      console.log("Refreshing system user profile for user:", user.id);
+      console.log("Atualizando perfil do usuário:", user.id);
       
-      // Add a flag to prevent concurrent refreshes
+      // Adicionar uma flag para evitar atualizações concorrentes
       if (refreshingProfile.current) {
-        console.log("Profile refresh already in progress, skipping");
+        console.log("Atualização de perfil já em andamento, pulando");
         return;
       }
       
@@ -56,88 +56,88 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userProfile = await fetchProfile(user.id);
       
       if (userProfile) {
-        console.log("System user profile refreshed successfully:", userProfile);
+        console.log("Perfil atualizado com sucesso:", userProfile);
         setProfile(userProfile);
         setRole(userProfile.role);
       } else {
-        console.warn("Failed to refresh system user profile: No profile data returned");
+        console.warn("Falha ao atualizar perfil: Nenhum dado de perfil retornado");
       }
       refreshingProfile.current = false;
     } catch (error) {
-      console.error('Error refreshing system user profile:', error);
+      console.error('Erro ao atualizar perfil:', error);
       refreshingProfile.current = false;
     }
   };
 
-  // Set up auth state listener and check current session
+  // Configurar listener de estado de autenticação e verificar sessão atual
   useEffect(() => {
     const setupAuth = async () => {
       try {
-        console.log("Setting up auth state listener");
-        // First set up auth state listener
+        console.log("Configurando listener de estado de autenticação");
+        // Primeiro configurar o listener de estado de autenticação
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
-            console.log("Auth state changed:", event, "Session:", newSession ? "exists" : "null");
+            console.log("Estado de autenticação alterado:", event, "Sessão:", newSession ? "existe" : "null");
             
-            // Update session and user synchronously
+            // Atualizar sessão e usuário sincronamente
             setSession(newSession);
             setUser(newSession?.user ?? null);
             
-            // If session is null, clear profile and role
+            // Se sessão for nula, limpar perfil e função
             if (!newSession) {
-              console.log("Clearing profile and role due to no session");
+              console.log("Limpando perfil e função devido à ausência de sessão");
               setProfile(null);
               setRole(null);
             }
           }
         );
         
-        // Then check current session
-        console.log("Checking current session");
+        // Então verificar a sessão atual
+        console.log("Verificando sessão atual");
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        console.log("Current session:", currentSession ? "exists" : "null");
+        console.log("Sessão atual:", currentSession ? "existe" : "null");
         
-        // Update session and user synchronously
+        // Atualizar sessão e usuário sincronamente
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // If there's a user, fetch profile separately to avoid recursion
+        // Se houver um usuário, buscar perfil separadamente para evitar recursão
         if (currentSession?.user) {
-          console.log("User exists, fetching system user profile");
-          // Important: use setTimeout to avoid recursion cycle problems
+          console.log("Usuário existe, buscando perfil");
+          // Importante: usar setTimeout para evitar problemas de ciclo de recursão
           setTimeout(async () => {
             try {
               const userProfile = await fetchProfile(currentSession.user.id);
               
               if (userProfile) {
-                console.log("System user profile fetched successfully:", userProfile);
+                console.log("Perfil do usuário buscado com sucesso:", userProfile);
                 setProfile(userProfile);
                 setRole(userProfile.role);
               } else {
-                console.warn("No system user profile data returned");
+                console.warn("Nenhum dado de perfil retornado");
               }
               
               setAuthChecked(true);
               setLoading(false);
             } catch (profileError) {
-              console.error("Error fetching system user profile:", profileError);
+              console.error("Erro ao buscar perfil do usuário:", profileError);
               setAuthChecked(true);
               setLoading(false);
             }
           }, 0);
         } else {
-          console.log("No user, skipping system user profile fetch");
+          console.log("Sem usuário, pulando busca de perfil");
           setAuthChecked(true);
           setLoading(false);
         }
         
         return () => {
-          console.log("Cleaning up auth subscription");
+          console.log("Limpando inscrição de autenticação");
           subscription.unsubscribe();
         };
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Erro ao inicializar autenticação:', error);
         setAuthChecked(true);
         setLoading(false);
       }
@@ -146,27 +146,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setupAuth();
   }, []);
 
-  // Wrapper for updateProfile to update the local state as well
+  // Wrapper para updateProfile para atualizar o estado local também
   const updateProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
     if (!user) {
-      console.error("Cannot update profile: No system user logged in");
+      console.error("Não é possível atualizar o perfil: Nenhum usuário logado");
       return false;
     }
     
-    console.log("Updating system user profile with data:", profileData);
+    console.log("Atualizando perfil com dados:", profileData);
     const success = await updateUserProfile(profileData, user.id);
     
     if (success) {
-      console.log("System user profile updated successfully, updating local state");
-      // Update locally
+      console.log("Perfil atualizado com sucesso, atualizando estado local");
+      // Atualizar localmente
       if (profile) {
         setProfile({ ...profile, ...profileData });
       }
       
-      // Refresh profile data from server
+      // Buscar dados de perfil atualizados do servidor
       await refreshProfile();
     } else {
-      console.error("Failed to update system user profile");
+      console.error("Falha ao atualizar perfil");
     }
     
     return success;
@@ -195,7 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 };

@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import AdminUsersTab from '@/components/admin/AdminUsersTab';
 import RoleProtectedRoute from '@/components/auth/RoleProtectedRoute';
 
-// Define the super admin email
+// Define o email do superadmin
 const SUPER_ADMIN_EMAIL = 'kkauaritter@gmail.com';
 
 const Settings = () => {
@@ -17,10 +17,10 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check if the current user is a super admin
+  // Verifica se o usuário atual é um superadmin
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
   
-  // User can access admin features if they are the super admin or have admin role
+  // Usuário pode acessar recursos de administrador se for superadmin ou tiver função de admin
   const canAccessAdmin = isSuperAdmin || role === 'admin';
 
   if (!canAccessAdmin) {

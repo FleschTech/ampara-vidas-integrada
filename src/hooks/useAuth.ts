@@ -10,7 +10,7 @@ export const useAuthMethods = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log("Attempting to sign in with email:", email);
+      console.log("Tentando fazer login com o email:", email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -19,7 +19,7 @@ export const useAuthMethods = () => {
 
       if (error) throw error;
       
-      console.log("Sign in successful:", data);
+      console.log("Login bem sucedido:", data);
 
       toast({
         title: 'Login realizado com sucesso',
@@ -29,7 +29,7 @@ export const useAuthMethods = () => {
       navigate('/dashboard');
       return true;
     } catch (error: any) {
-      console.error("Sign in error:", error);
+      console.error("Erro ao fazer login:", error);
       
       toast({
         title: 'Erro ao fazer login',
@@ -42,7 +42,7 @@ export const useAuthMethods = () => {
 
   const signUp = async (email: string, password: string, name: string, role: UserRole = 'hospital') => {
     try {
-      console.log("Attempting to sign up system user with:", { email, name, role });
+      console.log("Tentando cadastrar novo usuário com:", { email, name, role });
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -57,20 +57,20 @@ export const useAuthMethods = () => {
 
       if (error) throw error;
       
-      console.log("System user sign up successful:", data);
+      console.log("Cadastro bem sucedido:", data);
 
       toast({
-        title: 'Conta de usuário do sistema criada com sucesso',
+        title: 'Conta criada com sucesso',
         description: 'Verifique seu email para confirmar o cadastro.',
       });
 
       navigate('/login');
       return true;
     } catch (error: any) {
-      console.error("System user sign up error:", error);
+      console.error("Erro ao criar conta:", error);
       
       toast({
-        title: 'Erro ao criar conta de usuário do sistema',
+        title: 'Erro ao criar conta', 
         description: error.message,
         variant: 'destructive',
       });
@@ -80,11 +80,11 @@ export const useAuthMethods = () => {
 
   const signOut = async () => {
     try {
-      console.log("Attempting to sign out");
+      console.log("Tentando fazer logout");
       
       await supabase.auth.signOut();
       
-      console.log("Sign out successful");
+      console.log("Logout bem sucedido");
       
       navigate('/login');
       toast({
@@ -93,7 +93,7 @@ export const useAuthMethods = () => {
       });
       return true;
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Erro ao fazer logout:', error);
       return false;
     }
   };

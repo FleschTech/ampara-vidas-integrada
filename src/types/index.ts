@@ -1,6 +1,6 @@
 
 // Tipos de usuário
-export type UserRole = 'hospital' | 'social_assistance' | 'police' | 'admin';
+export type UserRole = 'hospital' | 'social_assistance' | 'police' | 'admin' | 'tutelar_council';
 
 // Tipos de status de caso
 export type CaseStatus = 'open' | 'in_progress' | 'referred' | 'closed';

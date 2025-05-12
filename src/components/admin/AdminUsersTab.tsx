@@ -46,7 +46,7 @@ const AdminUsersTab = () => {
     try {
       setLoading(true);
       
-      // Sign up the user
+      // Cadastrar o usuário
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -60,7 +60,7 @@ const AdminUsersTab = () => {
       
       if (signUpError) throw signUpError;
       
-      // The handle_new_user trigger will create the profile record automatically
+      // O trigger handle_new_user criará o registro de perfil automaticamente
       
       toast({
         title: "Usuário criado com sucesso",
@@ -69,7 +69,7 @@ const AdminUsersTab = () => {
       
       reset();
     } catch (error: any) {
-      console.error("Error creating user:", error);
+      console.error("Erro ao criar usuário:", error);
       toast({
         title: "Erro ao criar usuário",
         description: error.message || "Ocorreu um erro inesperado",
@@ -201,6 +201,7 @@ const AdminUsersTab = () => {
                 <SelectItem value="social_assistance">Assistência Social</SelectItem>
                 <SelectItem value="police">Polícia</SelectItem>
                 <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="tutelar_council">Conselho Tutelar</SelectItem>
               </SelectContent>
             </Select>
           </div>
