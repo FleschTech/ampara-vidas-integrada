@@ -14,23 +14,12 @@ export type Profile = {
   updated_at: string;
 };
 
-// Function to fetch staff profile using RPC function to avoid recursion
+// Function to fetch staff profile
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
     console.log("Fetching staff profile for user:", userId);
     
-    // First get the user role using the RPC function to avoid recursion
-    const { data: roleData, error: roleError } = await supabase
-      .rpc('get_user_role', { user_id: userId });
-    
-    if (roleError) {
-      console.error('Error fetching staff user role:', roleError);
-      return null;
-    }
-    
-    console.log("Role data from RPC:", roleData);
-    
-    // Then fetch the rest of the profile data directly (bypassing RLS check for role)
+    // Get the profile data
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -44,12 +33,9 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
     
     console.log("Profile data from DB:", profileData);
 
-    // Combine the role from RPC call with the profile data
     if (profileData) {
-      return {
-        ...profileData,
-        role: roleData as UserRole // Use the role from the RPC function
-      } as Profile;
+      // The role is now directly in the profiles table
+      return profileData as Profile;
     }
     
     return null;
