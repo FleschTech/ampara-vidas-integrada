@@ -9,7 +9,298 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          alert_type: string
+          case_id: string
+          created_at: string
+          description: string
+          id: string
+          is_resolved: boolean | null
+          resolved_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          case_id: string
+          created_at?: string
+          description: string
+          id?: string
+          is_resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          case_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistance_cases: {
+        Row: {
+          alert_generated: boolean | null
+          assisted_person_id: string
+          case_status: Database["public"]["Enums"]["case_status"]
+          created_at: string
+          description: string
+          id: string
+          is_recurrent: boolean | null
+          is_suspicious: boolean | null
+          registered_by: string
+          suspicion_type: Database["public"]["Enums"]["suspicion_type"] | null
+          updated_at: string
+          urgency: Database["public"]["Enums"]["urgency_level"]
+        }
+        Insert: {
+          alert_generated?: boolean | null
+          assisted_person_id: string
+          case_status?: Database["public"]["Enums"]["case_status"]
+          created_at?: string
+          description: string
+          id?: string
+          is_recurrent?: boolean | null
+          is_suspicious?: boolean | null
+          registered_by: string
+          suspicion_type?: Database["public"]["Enums"]["suspicion_type"] | null
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_level"]
+        }
+        Update: {
+          alert_generated?: boolean | null
+          assisted_person_id?: string
+          case_status?: Database["public"]["Enums"]["case_status"]
+          created_at?: string
+          description?: string
+          id?: string
+          is_recurrent?: boolean | null
+          is_suspicious?: boolean | null
+          registered_by?: string
+          suspicion_type?: Database["public"]["Enums"]["suspicion_type"] | null
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["urgency_level"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistance_cases_assisted_person_id_fkey"
+            columns: ["assisted_person_id"]
+            isOneToOne: false
+            referencedRelation: "assisted_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assisted_persons: {
+        Row: {
+          address: string
+          birth_date: string
+          city: string
+          cpf: string | null
+          created_at: string
+          full_name: string
+          gender: string
+          id: string
+          neighborhood: string
+          phone: string | null
+          state: string
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address: string
+          birth_date: string
+          city: string
+          cpf?: string | null
+          created_at?: string
+          full_name: string
+          gender: string
+          id?: string
+          neighborhood: string
+          phone?: string | null
+          state: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string
+          birth_date?: string
+          city?: string
+          cpf?: string | null
+          created_at?: string
+          full_name?: string
+          gender?: string
+          id?: string
+          neighborhood?: string
+          phone?: string | null
+          state?: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      case_documents: {
+        Row: {
+          case_id: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          uploaded_by: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          uploaded_by: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      police_referrals: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          referral_date: string
+          referred_by: string
+          report_details: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          referral_date?: string
+          referred_by: string
+          report_details: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          referral_date?: string
+          referred_by?: string
+          report_details?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "police_referrals_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          organization?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_followups: {
+        Row: {
+          action_taken: string | null
+          case_id: string
+          created_at: string
+          id: string
+          performed_by: string
+          report: string
+          updated_at: string
+          visit_date: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          case_id: string
+          created_at?: string
+          id?: string
+          performed_by: string
+          report: string
+          updated_at?: string
+          visit_date?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          performed_by?: string
+          report?: string
+          updated_at?: string
+          visit_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_followups_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "assistance_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +309,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      case_status: "open" | "in_progress" | "referred" | "closed"
+      suspicion_type:
+        | "physical_abuse"
+        | "psychological_abuse"
+        | "sexual_abuse"
+        | "negligence"
+        | "other"
+      urgency_level: "low" | "medium" | "high" | "critical"
+      user_role: "hospital" | "social_assistance" | "police" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +432,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      case_status: ["open", "in_progress", "referred", "closed"],
+      suspicion_type: [
+        "physical_abuse",
+        "psychological_abuse",
+        "sexual_abuse",
+        "negligence",
+        "other",
+      ],
+      urgency_level: ["low", "medium", "high", "critical"],
+      user_role: ["hospital", "social_assistance", "police", "admin"],
+    },
   },
 } as const
