@@ -314,6 +314,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      update_user_profile: {
+        Args: { user_id: string; profile_data: Json }
+        Returns: boolean
+      }
     }
     Enums: {
       case_status: "open" | "in_progress" | "referred" | "closed"

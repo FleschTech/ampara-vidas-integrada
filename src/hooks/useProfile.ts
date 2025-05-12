@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,17 +14,17 @@ export type Profile = {
   updated_at: string;
 };
 
-// Function to fetch profile using RPC function to avoid recursion
+// Function to fetch staff profile using RPC function to avoid recursion
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
-    console.log("Fetching profile for user:", userId);
+    console.log("Fetching staff profile for user:", userId);
     
     // First get the user role using the RPC function to avoid recursion
     const { data: roleData, error: roleError } = await supabase
       .rpc('get_user_role', { user_id: userId });
     
     if (roleError) {
-      console.error('Error fetching user role:', roleError);
+      console.error('Error fetching staff user role:', roleError);
       return null;
     }
     
@@ -37,7 +38,7 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       .maybeSingle();
       
     if (profileError) {
-      console.error('Error fetching profile:', profileError);
+      console.error('Error fetching staff profile:', profileError);
       return null;
     }
     
@@ -59,10 +60,9 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 };
 
 export const useProfileManagement = () => {
-  // Alternative approach if you can't create RPC functions
   const updateProfile = async (profileData: Partial<Profile>, userId: string) => {
     try {
-      console.log("Updating profile for user:", userId, "with data:", profileData);
+      console.log("Updating staff profile for user:", userId, "with data:", profileData);
       if (!userId) throw new Error('Usuário não autenticado');
 
       // Use service role client to bypass RLS
@@ -83,7 +83,7 @@ export const useProfileManagement = () => {
       
       return true;
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating staff profile:", error);
       
       toast({
         title: 'Erro ao atualizar perfil', 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -62,7 +63,7 @@ const Profile = () => {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
-      console.log("Updating profile with data:", data);
+      console.log("Updating staff profile with data:", data);
       await updateProfile(data);
     } catch (error: any) {
       toast({
@@ -93,9 +94,9 @@ const Profile = () => {
         <div className="max-w-lg mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Meu Perfil</CardTitle>
+              <CardTitle className="text-xl">Meu Perfil de Usuário do Sistema</CardTitle>
               <CardDescription>
-                Atualize suas informações pessoais
+                Atualize suas informações de usuário do sistema
               </CardDescription>
             </CardHeader>
             

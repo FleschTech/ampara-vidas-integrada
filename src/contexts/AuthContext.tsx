@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -38,12 +39,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Function to refresh profile data
   const refreshProfile = async (): Promise<void> => {
     if (!user) {
-      console.log("Cannot refresh profile: No user logged in");
+      console.log("Cannot refresh profile: No system user logged in");
       return;
     }
     
     try {
-      console.log("Refreshing profile for user:", user.id);
+      console.log("Refreshing system user profile for user:", user.id);
       
       // Add a flag to prevent concurrent refreshes
       if (refreshingProfile.current) {
@@ -55,15 +56,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userProfile = await fetchProfile(user.id);
       
       if (userProfile) {
-        console.log("Profile refreshed successfully:", userProfile);
+        console.log("System user profile refreshed successfully:", userProfile);
         setProfile(userProfile);
         setRole(userProfile.role);
       } else {
-        console.warn("Failed to refresh profile: No profile data returned");
+        console.warn("Failed to refresh system user profile: No profile data returned");
       }
       refreshingProfile.current = false;
     } catch (error) {
-      console.error('Error refreshing profile:', error);
+      console.error('Error refreshing system user profile:', error);
       refreshingProfile.current = false;
     }
   };
@@ -103,30 +104,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // If there's a user, fetch profile separately to avoid recursion
         if (currentSession?.user) {
-          console.log("User exists, fetching profile");
+          console.log("User exists, fetching system user profile");
           // Important: use setTimeout to avoid recursion cycle problems
           setTimeout(async () => {
             try {
               const userProfile = await fetchProfile(currentSession.user.id);
               
               if (userProfile) {
-                console.log("Profile fetched successfully:", userProfile);
+                console.log("System user profile fetched successfully:", userProfile);
                 setProfile(userProfile);
                 setRole(userProfile.role);
               } else {
-                console.warn("No profile data returned");
+                console.warn("No system user profile data returned");
               }
               
               setAuthChecked(true);
               setLoading(false);
             } catch (profileError) {
-              console.error("Error fetching profile:", profileError);
+              console.error("Error fetching system user profile:", profileError);
               setAuthChecked(true);
               setLoading(false);
             }
           }, 0);
         } else {
-          console.log("No user, skipping profile fetch");
+          console.log("No user, skipping system user profile fetch");
           setAuthChecked(true);
           setLoading(false);
         }
@@ -148,15 +149,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Wrapper for updateProfile to update the local state as well
   const updateProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
     if (!user) {
-      console.error("Cannot update profile: No user logged in");
+      console.error("Cannot update profile: No system user logged in");
       return false;
     }
     
-    console.log("Updating profile with data:", profileData);
+    console.log("Updating system user profile with data:", profileData);
     const success = await updateUserProfile(profileData, user.id);
     
     if (success) {
-      console.log("Profile updated successfully, updating local state");
+      console.log("System user profile updated successfully, updating local state");
       // Update locally
       if (profile) {
         setProfile({ ...profile, ...profileData });
@@ -165,7 +166,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Refresh profile data from server
       await refreshProfile();
     } else {
-      console.error("Failed to update profile");
+      console.error("Failed to update system user profile");
     }
     
     return success;

@@ -21,11 +21,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       
       // If there's a user but we're not sure about the profile, refresh it
       if (user && !loading) {
-        console.log("User authenticated, ensuring profile is loaded");
+        console.log("System user authenticated, ensuring profile is loaded");
         try {
           await refreshProfile();
         } catch (error) {
-          console.error("Error refreshing profile in ProtectedRoute:", error);
+          console.error("Error refreshing system user profile in ProtectedRoute:", error);
         }
       }
       
@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
   
   if (!user) {
-    console.log("Redirecting to login, no user");
+    console.log("Redirecting to login, no system user");
     return <Navigate to="/login" replace />;
   }
   

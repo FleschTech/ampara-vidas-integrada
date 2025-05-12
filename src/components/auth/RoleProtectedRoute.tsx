@@ -26,7 +26,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
         
         // If no user, no access
         if (!user) {
-          console.log("No user, denying access");
+          console.log("No system user, denying access");
           setHasAccess(false);
           setIsCheckingRole(false);
           return;
@@ -34,18 +34,18 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
         
         // Double-check that we have the role, if not try to refresh the profile
         if (!role) {
-          console.log("No role found, attempting to refresh profile");
+          console.log("No system user role found, attempting to refresh profile");
           await refreshProfile();
         }
         
-        console.log("User role:", role, "Allowed roles:", allowedRoles);
+        console.log("System user role:", role, "Allowed roles:", allowedRoles);
         
         // If we have a role and it's in allowed roles, grant access
         if (role && allowedRoles.includes(role)) {
-          console.log("Access granted for role:", role);
+          console.log("Access granted for system user with role:", role);
           setHasAccess(true);
         } else {
-          console.log("Access denied for role:", role);
+          console.log("Access denied for system user with role:", role);
           setHasAccess(false);
           
           // Show toast only if there's a user but role isn't allowed
@@ -60,7 +60,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
         
         setIsCheckingRole(false);
       } catch (error) {
-        console.error("Erro ao verificar permissões:", error);
+        console.error("Erro ao verificar permissões do usuário do sistema:", error);
         setHasAccess(false);
         setIsCheckingRole(false);
       }
@@ -78,16 +78,16 @@ const RoleProtectedRoute = ({ children, allowedRoles }: RoleProtectedRouteProps)
   }
   
   if (!user) {
-    console.log("Redirecting to login, no user");
+    console.log("Redirecting to login, no system user");
     return <Navigate to="/login" replace />;
   }
   
   if (!hasAccess) {
-    console.log("Redirecting to dashboard, no access");
+    console.log("Redirecting to dashboard, no access for this system user role");
     return <Navigate to="/dashboard" replace />;
   }
   
-  console.log("Rendering protected content");
+  console.log("Rendering protected content for system user with appropriate role");
   return <>{children}</>;
 };
 

@@ -42,7 +42,7 @@ export const useAuthMethods = () => {
 
   const signUp = async (email: string, password: string, name: string, role: UserRole = 'hospital') => {
     try {
-      console.log("Attempting to sign up with:", { email, name, role });
+      console.log("Attempting to sign up system user with:", { email, name, role });
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -57,20 +57,20 @@ export const useAuthMethods = () => {
 
       if (error) throw error;
       
-      console.log("Sign up successful:", data);
+      console.log("System user sign up successful:", data);
 
       toast({
-        title: 'Conta criada com sucesso',
+        title: 'Conta de usuário do sistema criada com sucesso',
         description: 'Verifique seu email para confirmar o cadastro.',
       });
 
       navigate('/login');
       return true;
     } catch (error: any) {
-      console.error("Sign up error:", error);
+      console.error("System user sign up error:", error);
       
       toast({
-        title: 'Erro ao criar conta',
+        title: 'Erro ao criar conta de usuário do sistema',
         description: error.message,
         variant: 'destructive',
       });

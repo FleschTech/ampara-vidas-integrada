@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { AssistedPersonInput } from '@/types';
 
-// Esquema de validação
+// Schema for validation
 const pessoaSchema = z.object({
   full_name: z.string().min(3, { message: "Nome completo deve ter pelo menos 3 caracteres" }),
   cpf: z.string().optional(),
@@ -46,7 +46,7 @@ const RegisterPerson = () => {
     }
   });
 
-  // Redirecionar se não estiver autenticado
+  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       navigate('/login');
@@ -57,7 +57,7 @@ const RegisterPerson = () => {
     try {
       setSubmitting(true);
 
-      // Garantir que todos os campos obrigatórios estejam presentes
+      // Ensure all required fields are present
       const formattedData: AssistedPersonInput = {
         full_name: data.full_name,
         birth_date: new Date(data.birth_date).toISOString().split('T')[0],
@@ -83,7 +83,7 @@ const RegisterPerson = () => {
         description: "Pessoa assistida cadastrada com sucesso.",
       });
 
-      // Opção: Redirecionar para criação de atendimento
+      // Option: Redirect to case creation
       if (newPerson && newPerson[0]) {
         navigate(`/register-case?person_id=${newPerson[0].id}`);
       } else {
@@ -119,7 +119,7 @@ const RegisterPerson = () => {
           <CardHeader>
             <CardTitle className="text-2xl">Cadastrar Pessoa Assistida</CardTitle>
             <CardDescription>
-              Insira os dados da pessoa assistida para cadastro no sistema.
+              Insira os dados da pessoa assistida (não confundir com usuário do sistema). Esta pessoa é alguém que está recebendo atendimento.
             </CardDescription>
           </CardHeader>
           
