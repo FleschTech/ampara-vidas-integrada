@@ -7,24 +7,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Shield, UserPlus, FileText, AlertTriangle, Search, MapPin, PlusCircle } from 'lucide-react';
-
-// Dados de exemplo para os gráficos
-const barData = [
-  { bairro: 'Centro', casos: 15 },
-  { bairro: 'Jardim', casos: 8 },
-  { bairro: 'São José', casos: 12 },
-  { bairro: 'Industrial', casos: 5 },
-  { bairro: 'Vila Nova', casos: 9 },
-];
-
-const lineData = [
-  { mes: 'Jan', atendimentos: 4 },
-  { mes: 'Fev', atendimentos: 7 },
-  { mes: 'Mar', atendimentos: 5 },
-  { mes: 'Abr', atendimentos: 10 },
-  { mes: 'Mai', atendimentos: 8 },
-  { mes: 'Jun', atendimentos: 12 },
-];
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const { user, role, loading, signOut } = useAuth();
@@ -33,6 +16,9 @@ const Dashboard = () => {
   const [caseCount, setCaseCount] = useState(0);
   const [recurrentCount, setRecurrentCount] = useState(0);
   const [recentCases, setRecentCases] = useState([]);
+  const [neighborhoodData, setNeighborhoodData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Verificar autenticação
   useEffect(() => {
@@ -41,28 +27,147 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
-  // Aqui seria feita a chamada à API para buscar os dados reais
+  // Carregar dados do dashboard
   useEffect(() => {
-    if (user) {
-      // Simulação de dados
-      setAlertCount(5);
-      setCaseCount(42);
-      setRecurrentCount(8);
-      setRecentCases([
-        {id: '1', name: 'Maria Silva', date: '12/05/2025', urgency: 'alta'},
-        {id: '2', name: 'Ana Santos', date: '10/05/2025', urgency: 'média'},
-        {id: '3', name: 'Pedro Oliveira', date: '08/05/2025', urgency: 'baixa'},
-      ]);
-    }
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Contagem de alertas ativos
+        const { count: alertCountResult, error: alertError } = await supabase
+          .from('alerts')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_resolved', false);
+          
+        if (alertError) throw alertError;
+        setAlertCount(alertCountResult || 0);
+        
+        // Contagem total de atendimentos
+        const { count: caseCountResult, error: caseError } = await supabase
+          .from('assistance_cases')
+          .select('id', { count: 'exact', head: true });
+          
+        if (caseError) throw caseError;
+        setCaseCount(caseCountResult || 0);
+        
+        // Contagem de casos recorrentes
+        const { count: recurrentCountResult, error: recurrentError } = await supabase
+          .from('assistance_cases')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_recurrent', true);
+          
+        if (recurrentError) throw recurrentError;
+        setRecurrentCount(recurrentCountResult || 0);
+        
+        // Buscar casos recentes
+        const { data: recentCasesData, error: recentError } = await supabase
+          .from('assistance_cases')
+          .select(`
+            id,
+            urgency,
+            created_at,
+            person:assisted_persons (
+              full_name
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        if (recentError) throw recentError;
+        setRecentCases(recentCasesData || []);
+        
+        // Distribuição por bairro
+        const { data: neighborhoodStats, error: neighborhoodError } = await supabase
+          .from('assisted_persons')
+          .select('neighborhood, id')
+          .order('neighborhood');
+          
+        if (neighborhoodError) throw neighborhoodError;
+        
+        // Agregar dados por bairro
+        const neighborhoodCounts = neighborhoodStats?.reduce((acc, item) => {
+          const neighborhood = item.neighborhood;
+          acc[neighborhood] = (acc[neighborhood] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const neighborhoodChartData = Object.keys(neighborhoodCounts || {})
+          .map(bairro => ({
+            bairro,
+            casos: neighborhoodCounts[bairro]
+          }))
+          .sort((a, b) => b.casos - a.casos)
+          .slice(0, 5);
+          
+        setNeighborhoodData(neighborhoodChartData);
+        
+        // Dados mensais
+        const { data: monthlyStats, error: monthlyError } = await supabase
+          .from('assistance_cases')
+          .select('created_at')
+          .order('created_at');
+          
+        if (monthlyError) throw monthlyError;
+        
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const currentYear = new Date().getFullYear();
+        const monthlyCounts = monthlyStats?.reduce((acc, item) => {
+          const date = new Date(item.created_at);
+          // Apenas dados do ano atual
+          if (date.getFullYear() === currentYear) {
+            const month = date.getMonth();
+            acc[month] = (acc[month] || 0) + 1;
+          }
+          return acc;
+        }, {});
+        
+        const monthlyChartData = monthNames.map((mes, index) => ({
+          mes,
+          atendimentos: monthlyCounts ? (monthlyCounts[index] || 0) : 0
+        }));
+        
+        setMonthlyData(monthlyChartData);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
   }, [user]);
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-t-primary rounded-full animate-spin"></div>
       </div>
     );
   }
+
+  const getUrgencyBadge = (urgency) => {
+    switch(urgency) {
+      case 'critical':
+        return <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Crítica</span>;
+      case 'high':
+        return <span className="px-2 py-1 rounded text-xs bg-orange-100 text-orange-800">Alta</span>;
+      case 'medium':
+        return <span className="px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">Média</span>;
+      default:
+        return <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Baixa</span>;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', { 
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -105,12 +210,14 @@ const Dashboard = () => {
                 Buscar
               </Button>
             </li>
-            <li>
-              <Button variant="link" className="text-white p-0" onClick={() => navigate('/alerts')}>
-                Alertas
-              </Button>
-            </li>
-            {role === 'social_assistance' && (
+            {(role === 'admin' || role === 'social_assistance') && (
+              <li>
+                <Button variant="link" className="text-white p-0" onClick={() => navigate('/alerts')}>
+                  Alertas
+                </Button>
+              </li>
+            )}
+            {(role === 'social_assistance' || role === 'admin') && (
               <li>
                 <Button variant="link" className="text-white p-0" onClick={() => navigate('/followups')}>
                   Acompanhamentos
@@ -129,6 +236,13 @@ const Dashboard = () => {
                 Meu Perfil
               </Button>
             </li>
+            {role === 'admin' && (
+              <li>
+                <Button variant="link" className="text-white p-0" onClick={() => navigate('/settings')}>
+                  Configurações
+                </Button>
+              </li>
+            )}
           </ul>
         </div>
       </nav>
@@ -184,7 +298,7 @@ const Dashboard = () => {
         </div>
 
         {/* Alertas Recentes */}
-        {alertCount > 0 && (
+        {alertCount > 0 && (role === 'admin' || role === 'social_assistance') && (
           <Alert className="mb-6 bg-red-50 border-red-200">
             <AlertTriangle className="h-4 w-4 text-red-500" />
             <AlertTitle>Atenção necessária</AlertTitle>
@@ -206,7 +320,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData}>
+                  <BarChart data={neighborhoodData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="bairro" />
                     <YAxis />
@@ -226,7 +340,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={lineData}>
+                  <LineChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="mes" />
                     <YAxis />
@@ -263,16 +377,10 @@ const Dashboard = () => {
                 <tbody>
                   {recentCases.map((caso) => (
                     <tr key={caso.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">{caso.name}</td>
-                      <td className="py-3 px-4">{caso.date}</td>
+                      <td className="py-3 px-4">{caso.person?.full_name || "Nome não disponível"}</td>
+                      <td className="py-3 px-4">{formatDate(caso.created_at)}</td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          caso.urgency === 'alta' ? 'bg-red-100 text-red-800' :
-                          caso.urgency === 'média' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {caso.urgency}
-                        </span>
+                        {getUrgencyBadge(caso.urgency)}
                       </td>
                       <td className="py-3 px-4">
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/case/${caso.id}`)}>
@@ -281,6 +389,14 @@ const Dashboard = () => {
                       </td>
                     </tr>
                   ))}
+                  
+                  {recentCases.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Nenhum atendimento registrado ainda.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
