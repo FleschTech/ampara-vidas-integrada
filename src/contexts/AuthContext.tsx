@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -39,34 +38,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // This function fetches profile using direct SQL query to avoid recursion
+  // This function fetches profile using our RPC function to avoid recursion
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
       // Using the RPC function to avoid recursion
-      const { data, error } = await supabase
-        .rpc('get_user_role', { user_id: userId })
-        .then(async (roleResult) => {
-          if (roleResult.error) {
-            console.error('Error fetching user role:', roleResult.error);
-            return { data: null, error: roleResult.error };
-          }
-          
-          // Now fetch the complete profile with the role we know
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-            
-          return { data: profileData, error: profileError };
-        });
-
-      if (error) {
-        console.error('Error fetching profile:', error);
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_user_role', { user_id: userId });
+      
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        return null;
+      }
+      
+      // Now fetch the complete profile with the role we know
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
         return null;
       }
 
-      return data as Profile;
+      return profileData as Profile;
     } catch (error) {
       console.error('Error in fetchProfile:', error);
       return null;
