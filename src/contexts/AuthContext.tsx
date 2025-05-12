@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch profile separately to avoid recursion
-  const fetchProfile = async (userId: string) => {
+  // This function is called outside the auth state change handler to avoid recursion
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -65,12 +65,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // First set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, newSession) => {
-            // Set session and user synchronously
+            // First update the session and user state synchronously
             setSession(newSession);
             setUser(newSession?.user ?? null);
             
-            // If there's a user, fetch profile in a separate cycle
+            // Then fetch profile asynchronously in a separate cycle
             if (newSession?.user) {
+              // Use setTimeout to ensure this runs in a separate cycle,
+              // avoiding potential recursion issues with RLS policies
               setTimeout(async () => {
                 const userProfile = await fetchProfile(newSession.user.id);
                 if (userProfile) {
@@ -88,7 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Then check current session
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        // Set session and user synchronously
+        // Update session and user synchronously
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
