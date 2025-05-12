@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +17,7 @@ export type Profile = {
 // Function to fetch profile using RPC function to avoid recursion
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
-    // Using the RPC function to avoid recursion
+    // First get the user role using the RPC function to avoid recursion
     const { data: roleData, error: roleError } = await supabase
       .rpc('get_user_role', { user_id: userId });
     
@@ -25,7 +26,7 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       return null;
     }
     
-    // Now fetch the complete profile with the role we know
+    // Then fetch the rest of the profile data directly (bypassing RLS check for role)
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -37,7 +38,15 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       return null;
     }
 
-    return profileData as Profile;
+    // Combine the role from RPC call with the profile data
+    if (profileData) {
+      return {
+        ...profileData,
+        role: roleData as UserRole // Use the role from the RPC function
+      } as Profile;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error in fetchProfile:', error);
     return null;

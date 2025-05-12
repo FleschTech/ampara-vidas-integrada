@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -75,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // If there's a user, fetch profile separately to avoid recursion
         if (currentSession?.user) {
+          // Importante: use setTimeout para evitar problemas de ciclo de recursão
           setTimeout(async () => {
             const userProfile = await fetchProfile(currentSession.user.id);
             if (userProfile) {
@@ -145,4 +147,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
