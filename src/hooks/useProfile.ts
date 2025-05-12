@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,9 +62,9 @@ export const useProfileManagement = () => {
   const updateProfile = async (profileData: Partial<Profile>, userId: string) => {
     try {
       console.log("Updating profile for user:", userId, "with data:", profileData);
-      
       if (!userId) throw new Error('Usuário não autenticado');
 
+      // Use a transaction to update all fields at once
       const { error } = await supabase
         .from('profiles')
         .update(profileData)
