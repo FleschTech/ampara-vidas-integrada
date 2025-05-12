@@ -26,6 +26,7 @@ type AuthContextType = {
   signUp: (email: string, password: string, name: string, role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,14 +39,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // This function is called outside the auth state change handler to avoid recursion
+  // This function fetches profile using direct SQL query to avoid recursion
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
+      // Using the RPC function to avoid recursion
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .rpc('get_user_role', { user_id: userId })
+        .then(async (roleResult) => {
+          if (roleResult.error) {
+            console.error('Error fetching user role:', roleResult.error);
+            return { data: null, error: roleResult.error };
+          }
+          
+          // Now fetch the complete profile with the role we know
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+            
+          return { data: profileData, error: profileError };
+        });
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -58,6 +72,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return null;
     }
   };
+  
+  // Function to refresh profile data
+  const refreshProfile = async (): Promise<void> => {
+    if (!user) return;
+    
+    try {
+      const userProfile = await fetchProfile(user.id);
+      if (userProfile) {
+        setProfile(userProfile);
+        setRole(userProfile.role);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
 
   useEffect(() => {
     const setupAuth = async () => {
@@ -65,22 +94,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // First set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, newSession) => {
-            // First update the session and user state synchronously
+            // Update session and user synchronously
             setSession(newSession);
             setUser(newSession?.user ?? null);
             
-            // Then fetch profile asynchronously in a separate cycle
-            if (newSession?.user) {
-              // Use setTimeout to ensure this runs in a separate cycle,
-              // avoiding potential recursion issues with RLS policies
-              setTimeout(async () => {
-                const userProfile = await fetchProfile(newSession.user.id);
-                if (userProfile) {
-                  setProfile(userProfile);
-                  setRole(userProfile.role);
-                }
-              }, 0);
-            } else {
+            // If session is null, clear profile and role
+            if (!newSession) {
               setProfile(null);
               setRole(null);
             }
@@ -94,16 +113,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // If there's a user, fetch profile
+        // If there's a user, fetch profile separately to avoid recursion
         if (currentSession?.user) {
-          const userProfile = await fetchProfile(currentSession.user.id);
-          if (userProfile) {
-            setProfile(userProfile);
-            setRole(userProfile.role);
-          }
+          setTimeout(async () => {
+            const userProfile = await fetchProfile(currentSession.user.id);
+            if (userProfile) {
+              setProfile(userProfile);
+              setRole(userProfile.role);
+            }
+            setLoading(false);
+          }, 0);
+        } else {
+          setLoading(false);
         }
-        
-        setLoading(false);
         
         return () => {
           subscription.unsubscribe();
@@ -191,10 +213,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // Update locally
+      // Update locally and refresh from server
       if (profile) {
         setProfile({ ...profile, ...profileData });
       }
+      
+      // Refresh profile data from server
+      await refreshProfile();
 
       toast({
         title: 'Perfil atualizado',
@@ -221,6 +246,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signUp,
         signOut,
         updateProfile,
+        refreshProfile,
       }}
     >
       {children}

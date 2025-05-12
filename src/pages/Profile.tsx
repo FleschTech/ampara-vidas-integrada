@@ -21,7 +21,7 @@ const profileSchema = z.object({
 type FormValues = z.infer<typeof profileSchema>;
 
 const Profile = () => {
-  const { user, profile, loading, updateProfile } = useAuth();
+  const { user, profile, loading, updateProfile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   
@@ -44,7 +44,6 @@ const Profile = () => {
   // Fill the form with profile data
   useEffect(() => {
     if (profile) {
-      console.log("Profile loaded:", profile);
       reset({
         name: profile.name || '',
         organization: profile.organization || '',
@@ -52,6 +51,13 @@ const Profile = () => {
       });
     }
   }, [profile, reset]);
+  
+  // Refresh profile data when component mounts
+  useEffect(() => {
+    if (user && !loading) {
+      refreshProfile();
+    }
+  }, [refreshProfile, user, loading]);
   
   const onSubmit = async (data: FormValues) => {
     try {
