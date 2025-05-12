@@ -1,19 +1,11 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
 import { UserRole } from '@/types';
-
-type Profile = {
-  id: string;
-  name: string;
-  role: UserRole;
-  organization?: string | null;
-  phone?: string | null;
-  created_at: string;
-  updated_at: string;
-};
+import { fetchProfile, Profile, useProfileManagement } from '@/hooks/useProfile';
+import { useAuthMethods } from '@/hooks/useAuth';
 
 type AuthContextType = {
   user: User | null;
@@ -21,10 +13,10 @@ type AuthContextType = {
   role: UserRole | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, role?: UserRole) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (profile: Partial<Profile>) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, name: string, role?: UserRole) => Promise<boolean>;
+  signOut: () => Promise<boolean>;
+  updateProfile: (profile: Partial<Profile>) => Promise<boolean>;
   refreshProfile: () => Promise<void>;
 };
 
@@ -37,37 +29,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  // This function fetches profile using our RPC function to avoid recursion
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    try {
-      // Using the RPC function to avoid recursion
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_user_role', { user_id: userId });
-      
-      if (roleError) {
-        console.error('Error fetching user role:', roleError);
-        return null;
-      }
-      
-      // Now fetch the complete profile with the role we know
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return null;
-      }
-
-      return profileData as Profile;
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-      return null;
-    }
-  };
+  
+  // Import auth and profile management methods
+  const { updateProfile: updateUserProfile } = useProfileManagement();
+  const { signIn, signUp, signOut } = useAuthMethods();
   
   // Function to refresh profile data
   const refreshProfile = async (): Promise<void> => {
@@ -135,99 +100,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setupAuth();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Login realizado com sucesso',
-        description: `Bem-vindo de volta!`,
-      });
-
-      navigate('/dashboard');
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao fazer login',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const signUp = async (email: string, password: string, name: string, role: UserRole = 'hospital') => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Conta criada com sucesso',
-        description: 'Verifique seu email para confirmar o cadastro.',
-      });
-
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao criar conta',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-    toast({
-      title: 'Logout realizado',
-      description: 'Você foi desconectado com sucesso.',
-    });
-  };
-
-  const updateProfile = async (profileData: Partial<Profile>) => {
-    try {
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Update locally and refresh from server
+  // Wrapper for updateProfile to update the local state as well
+  const updateProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
+    if (!user) return false;
+    
+    const success = await updateUserProfile(profileData, user.id);
+    
+    if (success) {
+      // Update locally
       if (profile) {
         setProfile({ ...profile, ...profileData });
       }
       
       // Refresh profile data from server
       await refreshProfile();
-
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram atualizadas com sucesso.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao atualizar perfil',
-        description: error.message,
-        variant: 'destructive',
-      });
     }
+    
+    return success;
   };
 
   return (
