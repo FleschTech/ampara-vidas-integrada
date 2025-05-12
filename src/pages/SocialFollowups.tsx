@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Search, UserCheck, AlertTriangle, FileText, Check, X } from 'lucide-react';
-import { SocialFollowup } from '@/types';
+import { SocialFollowup, SocialFollowupInput } from '@/types';
 
 // Esquema de validação
 const followupSchema = z.object({
@@ -190,10 +190,17 @@ const SocialFollowups = () => {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
+
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
       
-      const followupData: Partial<SocialFollowup> = {
-        ...data,
-        performed_by: user!.id,
+      const followupData: SocialFollowupInput = {
+        case_id: data.case_id,
+        performed_by: user.id,
+        report: data.report,
+        visit_date: data.visit_date || null,
+        action_taken: data.action_taken || null
       };
       
       const { error } = await supabase

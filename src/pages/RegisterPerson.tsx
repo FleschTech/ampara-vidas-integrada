@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,20 +47,28 @@ const RegisterPerson = () => {
   });
 
   // Redirecionar se não estiver autenticado
-  useState(() => {
+  useEffect(() => {
     if (!loading && !user) {
       navigate('/login');
     }
-  });
+  }, [user, loading, navigate]);
 
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
 
-      // Formatando a data para o formato correto de armazenamento
+      // Garantir que todos os campos obrigatórios estejam presentes
       const formattedData: AssistedPersonInput = {
-        ...data,
+        full_name: data.full_name,
         birth_date: new Date(data.birth_date).toISOString().split('T')[0],
+        gender: data.gender,
+        address: data.address,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        cpf: data.cpf || null,
+        zip_code: data.zip_code || null,
+        phone: data.phone || null,
       };
 
       const { data: newPerson, error } = await supabase

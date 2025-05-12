@@ -130,9 +130,19 @@ const RegisterCase = () => {
     try {
       setSubmitting(true);
       
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Garantindo que todos os campos obrigatórios estão presentes
       const caseData: AssistanceCaseInput = {
-        ...data,
-        registered_by: user!.id,
+        assisted_person_id: data.assisted_person_id,
+        registered_by: user.id,
+        urgency: data.urgency,
+        case_status: 'open',
+        description: data.description,
+        is_suspicious: data.is_suspicious,
+        suspicion_type: data.is_suspicious ? data.suspicion_type : null
       };
       
       const { data: newCase, error } = await supabase

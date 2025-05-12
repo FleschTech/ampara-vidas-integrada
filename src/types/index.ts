@@ -26,30 +26,30 @@ export interface Profile {
 export interface AssistedPerson {
   id: string;
   full_name: string;
-  cpf?: string;
+  cpf?: string | null;
   birth_date: string;
   gender: string;
   address: string;
   neighborhood: string;
   city: string;
   state: string;
-  zip_code?: string;
-  phone?: string;
+  zip_code?: string | null;
+  phone?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface AssistedPersonInput {
   full_name: string;
-  cpf?: string;
+  cpf?: string | null;
   birth_date: string;
   gender: string;
   address: string;
   neighborhood: string;
   city: string;
   state: string;
-  zip_code?: string;
-  phone?: string;
+  zip_code?: string | null;
+  phone?: string | null;
 }
 
 // Tipos de atendimentos
@@ -60,7 +60,7 @@ export interface AssistanceCase {
   urgency: UrgencyLevel;
   case_status: CaseStatus;
   description: string;
-  suspicion_type?: SuspicionType;
+  suspicion_type?: SuspicionType | null;
   is_suspicious: boolean;
   is_recurrent: boolean;
   alert_generated: boolean;
@@ -70,11 +70,11 @@ export interface AssistanceCase {
 
 export interface AssistanceCaseInput {
   assisted_person_id: string;
-  registered_by?: string;
+  registered_by: string;
   urgency: UrgencyLevel;
   case_status?: CaseStatus;
   description: string;
-  suspicion_type?: SuspicionType;
+  suspicion_type?: SuspicionType | null;
   is_suspicious: boolean;
 }
 
@@ -83,9 +83,9 @@ export interface SocialFollowup {
   id: string;
   case_id: string;
   performed_by: string;
-  visit_date?: string;
+  visit_date?: string | null;
   report: string;
-  action_taken?: string;
+  action_taken?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -93,7 +93,7 @@ export interface SocialFollowup {
 export interface SocialFollowupInput {
   case_id: string;
   performed_by: string;
-  visit_date?: string;
+  visit_date?: string | null;
   report: string;
   action_taken?: string | null;
 }
