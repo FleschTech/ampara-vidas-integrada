@@ -38,40 +38,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      }
-      
-      setLoading(false);
-    };
-    
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setRole(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
+  // Separate function to fetch profile to avoid infinite recursion
   const fetchProfile = async (userId: string) => {
     try {
+      // Direct query to profiles table without RLS check to avoid recursion
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -83,12 +53,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      setProfile(data);
-      setRole(data.role);
+      if (data) {
+        setProfile(data);
+        setRole(data.role);
+      }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
     }
   };
+
+  useEffect(() => {
+    const setupAuth = async () => {
+      try {
+        // First, set up the auth listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (_event, currentSession) => {
+            setSession(currentSession);
+            setUser(currentSession?.user ?? null);
+            
+            // Use setTimeout to prevent potential recursion issues
+            if (currentSession?.user) {
+              setTimeout(() => {
+                fetchProfile(currentSession.user.id);
+              }, 0);
+            } else {
+              setProfile(null);
+              setRole(null);
+            }
+          }
+        );
+        
+        // Then check for an existing session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          await fetchProfile(currentSession.user.id);
+        }
+        
+        setLoading(false);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Erro ao inicializar autenticação:', error);
+        setLoading(false);
+      }
+    };
+    
+    setupAuth();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -104,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: `Bem-vindo de volta!`,
       });
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       toast({
         title: 'Erro ao fazer login',

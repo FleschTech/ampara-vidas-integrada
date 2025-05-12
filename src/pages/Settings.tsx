@@ -1,45 +1,18 @@
 
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, Database, Bell, Lock } from 'lucide-react';
+import { Shield, Users, Database, Bell, Lock, UserPlus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import AdminUsersTab from '@/components/admin/AdminUsersTab';
+import RoleProtectedRoute from '@/components/auth/RoleProtectedRoute';
 
 const Settings = () => {
-  const { user, role, loading } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  // Verificar se o usuário tem permissão para acessar esta página
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate('/login');
-      } else if (role === 'admin') {
-        setIsAdmin(true);
-      } else {
-        toast({
-          title: "Acesso negado",
-          description: "Você não tem permissão para acessar as configurações do sistema.",
-          variant: "destructive",
-        });
-        navigate('/dashboard');
-      }
-    }
-  }, [user, role, loading, navigate, toast]);
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-t-primary rounded-full animate-spin"></div>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -55,12 +28,16 @@ const Settings = () => {
           </p>
         </div>
         
-        {isAdmin && (
+        {role === 'admin' && (
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Usuários
+              </TabsTrigger>
+              <TabsTrigger value="new-user" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Novo Usuário
               </TabsTrigger>
               <TabsTrigger value="roles" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
@@ -92,6 +69,20 @@ const Settings = () => {
                       O módulo de gerenciamento de usuários está sendo implementado e estará disponível em breve.
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="new-user">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Criar Novo Usuário</CardTitle>
+                  <CardDescription>
+                    Cadastre um novo usuário no sistema com perfil específico.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminUsersTab />
                 </CardContent>
               </Card>
             </TabsContent>
