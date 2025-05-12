@@ -10,6 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
 
+type AlertPerson = {
+  full_name: string;
+  neighborhood: string;
+  city: string;
+};
+
+type AlertCase = {
+  assisted_person_id: string;
+  urgency: string;
+  description: string;
+  person: AlertPerson;
+};
+
 type Alert = {
   id: string;
   case_id: string;
@@ -18,16 +31,7 @@ type Alert = {
   created_at: string;
   is_resolved: boolean | null;
   resolved_at: string | null;
-  case: {
-    assisted_person_id: string;
-    urgency: string;
-    description: string;
-    person: {
-      full_name: string;
-      neighborhood: string;
-      city: string;
-    };
-  };
+  case: AlertCase;
 };
 
 const Alerts = () => {
@@ -76,11 +80,11 @@ const Alerts = () => {
             created_at,
             is_resolved,
             resolved_at,
-            case:assistance_cases (
+            case:assistance_cases!inner(
               assisted_person_id,
               urgency,
               description,
-              person:assisted_persons (
+              person:assisted_persons!inner(
                 full_name,
                 neighborhood,
                 city
@@ -91,7 +95,17 @@ const Alerts = () => {
           .order('created_at', { ascending: false });
           
         if (activeError) throw activeError;
-        setActiveAlerts(activeAlertsData || []);
+        
+        // Process data to match the expected format
+        const processedActiveAlerts = activeAlertsData?.map(alert => ({
+          ...alert,
+          case: {
+            ...alert.case[0],
+            person: alert.case[0].person[0]
+          }
+        })) || [];
+        
+        setActiveAlerts(processedActiveAlerts as Alert[]);
         
         // Buscar alertas resolvidos
         const { data: resolvedAlertsData, error: resolvedError } = await supabase
@@ -104,11 +118,11 @@ const Alerts = () => {
             created_at,
             is_resolved,
             resolved_at,
-            case:assistance_cases (
+            case:assistance_cases!inner(
               assisted_person_id,
               urgency,
               description,
-              person:assisted_persons (
+              person:assisted_persons!inner(
                 full_name,
                 neighborhood,
                 city
@@ -120,7 +134,17 @@ const Alerts = () => {
           .limit(10);
           
         if (resolvedError) throw resolvedError;
-        setResolvedAlerts(resolvedAlertsData || []);
+        
+        // Process data to match the expected format
+        const processedResolvedAlerts = resolvedAlertsData?.map(alert => ({
+          ...alert,
+          case: {
+            ...alert.case[0],
+            person: alert.case[0].person[0]
+          }
+        })) || [];
+        
+        setResolvedAlerts(processedResolvedAlerts as Alert[]);
       } catch (error: any) {
         console.error('Erro ao carregar alertas:', error);
         toast({
@@ -358,6 +382,28 @@ const Alerts = () => {
       </div>
     </div>
   );
+};
+
+const getUrgencyBadge = (urgency: string) => {
+  switch(urgency) {
+    case 'critical':
+      return <Badge className="bg-red-100 text-red-800 border-red-200">Crítica</Badge>;
+    case 'high':
+      return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Alta</Badge>;
+    case 'medium':
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Média</Badge>;
+    default:
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Baixa</Badge>;
+  }
+};
+
+const getAlertTypeBadge = (type: string) => {
+  switch(type) {
+    case 'recurrence':
+      return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Recorrência</Badge>;
+    default:
+      return <Badge>{type}</Badge>;
+  }
 };
 
 export default Alerts;

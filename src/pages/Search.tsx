@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -18,6 +17,12 @@ function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
+type SearchResultPerson = {
+  full_name: string;
+  city: string;
+  neighborhood: string;
+};
+
 type SearchResult = {
   id: string;
   assisted_person_id: string;
@@ -28,11 +33,7 @@ type SearchResult = {
   case_status: string;
   is_suspicious: boolean | null;
   is_recurrent: boolean | null;
-  person: {
-    full_name: string;
-    city: string;
-    neighborhood: string;
-  };
+  person: SearchResultPerson;
 };
 
 const formatDate = (dateString: string) => {
@@ -102,7 +103,7 @@ const Search = () => {
           case_status,
           is_suspicious,
           is_recurrent,
-          person:assisted_persons (
+          person:assisted_persons!inner(
             full_name,
             city,
             neighborhood
@@ -113,7 +114,13 @@ const Search = () => {
         
       if (error) throw error;
       
-      setSearchResults(data || []);
+      // Process data to match expected format
+      const processedResults = data?.map(result => ({
+        ...result,
+        person: result.person[0]
+      })) || [];
+      
+      setSearchResults(processedResults as SearchResult[]);
       setHasSearched(true);
     } catch (error: any) {
       console.error('Erro na busca:', error);
@@ -200,7 +207,7 @@ const Search = () => {
           case_status,
           is_suspicious,
           is_recurrent,
-          person:assisted_persons (
+          person:assisted_persons!inner(
             full_name,
             city,
             neighborhood
@@ -275,7 +282,13 @@ const Search = () => {
       
       if (error) throw error;
       
-      setSearchResults(results || []);
+      // Process data to match expected format
+      const processedResults = results?.map(result => ({
+        ...result,
+        person: result.person[0]
+      })) || [];
+      
+      setSearchResults(processedResults as SearchResult[]);
     } catch (error) {
       throw error;
     } finally {
