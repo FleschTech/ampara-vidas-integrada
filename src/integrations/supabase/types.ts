@@ -310,6 +310,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       case_status: "open" | "in_progress" | "referred" | "closed"

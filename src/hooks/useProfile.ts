@@ -17,6 +17,8 @@ export type Profile = {
 // Function to fetch profile using RPC function to avoid recursion
 export const fetchProfile = async (userId: string): Promise<Profile | null> => {
   try {
+    console.log("Fetching profile for user:", userId);
+    
     // First get the user role using the RPC function to avoid recursion
     const { data: roleData, error: roleError } = await supabase
       .rpc('get_user_role', { user_id: userId });
@@ -25,6 +27,8 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       console.error('Error fetching user role:', roleError);
       return null;
     }
+    
+    console.log("Role data from RPC:", roleData);
     
     // Then fetch the rest of the profile data directly (bypassing RLS check for role)
     const { data: profileData, error: profileError } = await supabase
@@ -37,6 +41,8 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
       console.error('Error fetching profile:', profileError);
       return null;
     }
+    
+    console.log("Profile data from DB:", profileData);
 
     // Combine the role from RPC call with the profile data
     if (profileData) {
@@ -56,6 +62,8 @@ export const fetchProfile = async (userId: string): Promise<Profile | null> => {
 export const useProfileManagement = () => {
   const updateProfile = async (profileData: Partial<Profile>, userId: string) => {
     try {
+      console.log("Updating profile for user:", userId, "with data:", profileData);
+      
       if (!userId) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
@@ -72,6 +80,8 @@ export const useProfileManagement = () => {
       
       return true;
     } catch (error: any) {
+      console.error("Error updating profile:", error);
+      
       toast({
         title: 'Erro ao atualizar perfil',
         description: error.message,

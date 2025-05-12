@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
   
   // Import auth and profile management methods
@@ -36,31 +37,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   // Function to refresh profile data
   const refreshProfile = async (): Promise<void> => {
-    if (!user) return;
+    if (!user) {
+      console.log("Cannot refresh profile: No user logged in");
+      return;
+    }
     
     try {
+      console.log("Refreshing profile for user:", user.id);
       const userProfile = await fetchProfile(user.id);
+      
       if (userProfile) {
+        console.log("Profile refreshed successfully:", userProfile);
         setProfile(userProfile);
         setRole(userProfile.role);
+      } else {
+        console.warn("Failed to refresh profile: No profile data returned");
       }
     } catch (error) {
       console.error('Error refreshing profile:', error);
     }
   };
 
+  // Set up auth state listener and check current session
   useEffect(() => {
     const setupAuth = async () => {
       try {
+        console.log("Setting up auth state listener");
         // First set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, newSession) => {
+          async (event, newSession) => {
+            console.log("Auth state changed:", event, "Session:", newSession ? "exists" : "null");
+            
             // Update session and user synchronously
             setSession(newSession);
             setUser(newSession?.user ?? null);
             
             // If session is null, clear profile and role
             if (!newSession) {
+              console.log("Clearing profile and role due to no session");
               setProfile(null);
               setRole(null);
             }
@@ -68,7 +82,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
         
         // Then check current session
+        console.log("Checking current session");
         const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        console.log("Current session:", currentSession ? "exists" : "null");
         
         // Update session and user synchronously
         setSession(currentSession);
@@ -76,24 +93,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // If there's a user, fetch profile separately to avoid recursion
         if (currentSession?.user) {
+          console.log("User exists, fetching profile");
           // Important: use setTimeout to avoid recursion cycle problems
           setTimeout(async () => {
-            const userProfile = await fetchProfile(currentSession.user.id);
-            if (userProfile) {
-              setProfile(userProfile);
-              setRole(userProfile.role);
+            try {
+              const userProfile = await fetchProfile(currentSession.user.id);
+              
+              if (userProfile) {
+                console.log("Profile fetched successfully:", userProfile);
+                setProfile(userProfile);
+                setRole(userProfile.role);
+              } else {
+                console.warn("No profile data returned");
+              }
+              
+              setAuthChecked(true);
+              setLoading(false);
+            } catch (profileError) {
+              console.error("Error fetching profile:", profileError);
+              setAuthChecked(true);
+              setLoading(false);
             }
-            setLoading(false);
           }, 0);
         } else {
+          console.log("No user, skipping profile fetch");
+          setAuthChecked(true);
           setLoading(false);
         }
         
         return () => {
+          console.log("Cleaning up auth subscription");
           subscription.unsubscribe();
         };
       } catch (error) {
         console.error('Error initializing auth:', error);
+        setAuthChecked(true);
         setLoading(false);
       }
     };
@@ -103,11 +137,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Wrapper for updateProfile to update the local state as well
   const updateProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
-    if (!user) return false;
+    if (!user) {
+      console.error("Cannot update profile: No user logged in");
+      return false;
+    }
     
+    console.log("Updating profile with data:", profileData);
     const success = await updateUserProfile(profileData, user.id);
     
     if (success) {
+      console.log("Profile updated successfully, updating local state");
       // Update locally
       if (profile) {
         setProfile({ ...profile, ...profileData });
@@ -115,6 +154,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Refresh profile data from server
       await refreshProfile();
+    } else {
+      console.error("Failed to update profile");
     }
     
     return success;

@@ -10,12 +10,16 @@ export const useAuthMethods = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Attempting to sign in with email:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
+      
+      console.log("Sign in successful:", data);
 
       toast({
         title: 'Login realizado com sucesso',
@@ -25,6 +29,8 @@ export const useAuthMethods = () => {
       navigate('/dashboard');
       return true;
     } catch (error: any) {
+      console.error("Sign in error:", error);
+      
       toast({
         title: 'Erro ao fazer login',
         description: error.message,
@@ -36,6 +42,8 @@ export const useAuthMethods = () => {
 
   const signUp = async (email: string, password: string, name: string, role: UserRole = 'hospital') => {
     try {
+      console.log("Attempting to sign up with:", { email, name, role });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -48,6 +56,8 @@ export const useAuthMethods = () => {
       });
 
       if (error) throw error;
+      
+      console.log("Sign up successful:", data);
 
       toast({
         title: 'Conta criada com sucesso',
@@ -57,6 +67,8 @@ export const useAuthMethods = () => {
       navigate('/login');
       return true;
     } catch (error: any) {
+      console.error("Sign up error:", error);
+      
       toast({
         title: 'Erro ao criar conta',
         description: error.message,
@@ -68,7 +80,12 @@ export const useAuthMethods = () => {
 
   const signOut = async () => {
     try {
+      console.log("Attempting to sign out");
+      
       await supabase.auth.signOut();
+      
+      console.log("Sign out successful");
+      
       navigate('/login');
       toast({
         title: 'Logout realizado',
