@@ -46,7 +46,8 @@ const AdminUsersTab = () => {
     try {
       setLoading(true);
       
-      const { data: signUpData, error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -57,7 +58,9 @@ const AdminUsersTab = () => {
         }
       });
       
-      if (error) throw error;
+      if (signUpError) throw signUpError;
+      
+      // The handle_new_user trigger will create the profile record automatically
       
       toast({
         title: "Usuário criado com sucesso",
@@ -66,9 +69,10 @@ const AdminUsersTab = () => {
       
       reset();
     } catch (error: any) {
+      console.error("Error creating user:", error);
       toast({
         title: "Erro ao criar usuário",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado",
         variant: "destructive"
       });
     } finally {

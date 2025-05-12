@@ -38,10 +38,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Separate function to fetch profile to avoid infinite recursion
+  // Direct database query for profile
   const fetchProfile = async (userId: string) => {
     try {
-      // Direct query to profiles table without RLS check to avoid recursion
+      // Using RPC call to get_user_role function to avoid recursion
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -49,33 +49,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (error) {
-        console.error('Erro ao buscar perfil:', error);
-        return;
+        console.error('Error fetching profile:', error);
+        return null;
       }
 
-      if (data) {
-        setProfile(data);
-        setRole(data.role);
-      }
+      return data as Profile;
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
+      console.error('Error in fetchProfile:', error);
+      return null;
     }
   };
 
   useEffect(() => {
     const setupAuth = async () => {
       try {
-        // First, set up the auth listener
+        // Get initial session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (currentSession?.user) {
+          setUser(currentSession.user);
+          setSession(currentSession);
+          
+          // Fetch profile outside of auth state change
+          const userProfile = await fetchProfile(currentSession.user.id);
+          if (userProfile) {
+            setProfile(userProfile);
+            setRole(userProfile.role);
+          }
+        }
+        
+        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (_event, currentSession) => {
-            setSession(currentSession);
-            setUser(currentSession?.user ?? null);
+          async (event, newSession) => {
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
             
-            // Use setTimeout to prevent potential recursion issues
-            if (currentSession?.user) {
-              setTimeout(() => {
-                fetchProfile(currentSession.user.id);
-              }, 0);
+            if (newSession?.user) {
+              // Fetch profile when auth state changes
+              const userProfile = await fetchProfile(newSession.user.id);
+              if (userProfile) {
+                setProfile(userProfile);
+                setRole(userProfile.role);
+              }
             } else {
               setProfile(null);
               setRole(null);
@@ -83,22 +98,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         );
         
-        // Then check for an existing session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          await fetchProfile(currentSession.user.id);
-        }
-        
         setLoading(false);
         
         return () => {
           subscription.unsubscribe();
         };
       } catch (error) {
-        console.error('Erro ao inicializar autenticação:', error);
+        console.error('Error initializing auth:', error);
         setLoading(false);
       }
     };
@@ -180,7 +186,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // Atualiza localmente
+      // Update locally
       if (profile) {
         setProfile({ ...profile, ...profileData });
       }
