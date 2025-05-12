@@ -1,5 +1,4 @@
-
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const refreshingProfile = useRef(false);
   const navigate = useNavigate();
   
   // Import auth and profile management methods
@@ -44,6 +44,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       console.log("Refreshing profile for user:", user.id);
+      
+      // Add a flag to prevent concurrent refreshes
+      if (refreshingProfile.current) {
+        console.log("Profile refresh already in progress, skipping");
+        return;
+      }
+      
+      refreshingProfile.current = true;
       const userProfile = await fetchProfile(user.id);
       
       if (userProfile) {
@@ -53,8 +61,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         console.warn("Failed to refresh profile: No profile data returned");
       }
+      refreshingProfile.current = false;
     } catch (error) {
       console.error('Error refreshing profile:', error);
+      refreshingProfile.current = false;
     }
   };
 
